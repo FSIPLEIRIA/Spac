@@ -1,3 +1,10 @@
+/** ==========================================
+* @title: Spac Node Class
+* @class: This class is meant to be the interface with ros2 functionalities as such it derives node, Here you will find all the boilerplate for node common node behaviour.
+* @author: João Vieira
+* @date:   2023-06-14
+========================================== **/
+
 #ifndef SPAC_NODE_H_
 #define SPAC_NODE_H_
 /**
@@ -6,9 +13,12 @@
 //#define __FSIPLEIRIA_2D_ONLY__
 
 #include <cstdio>
+#include <geometry_msgs/msg/detail/pose2_d__struct.hpp>
+#include <nav_msgs/msg/detail/odometry__struct.hpp>
 #include <string>
 #include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/executors.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <ackermann_msgs/msg/ackermann_drive.hpp>
 #include <chrono>
@@ -25,16 +35,16 @@
 #define PARAMS_TOPIC_WAYPOINT "wp_topic"
 #define PARAMS_TOPIC_ODOMETRY "odom_topic"
 #define PARAMS_TOPIC_ACKERMANN "ackermann_topic"
+#define PARAMS_TRACK_WIDTH "track_width"
 #define DRIVEMODEL_NODE_NAME "DriveModelNode"
 
 
 class SpacNode : public rclcpp::Node{
 	public:
 		SpacNode();
+
 		virtual ~SpacNode() = default;
 		
-
-
 		/**
 		 * @brief Get the Node Name object
 		 * 
@@ -65,12 +75,26 @@ class SpacNode : public rclcpp::Node{
 		std::string g_OdometryTopic();
 		std::string g_AckermannTopic();
 
+		//TODO: do a custom type for floating point bellow 
+		float g_TrackWidth();
+		/**
+		* @brief a safe way to retrieve inner Target mainly used for unit testing
+		*/
+		TargetWaypoint c_TargetWaypoint();
+		/**
+		* @brief Dispatches msgs for ackermann drive, this includes publishing and managing all the variables that ensure some internal quality
+		*/
+		void dispatchAckermannDrive();
+		
+	
 
 
 	protected:
 		int m_frequency=0;
+		float m_TrackWidth=0.0f;
 		rclcpp::TimerBase::SharedPtr m_timer;
-		int startPredictRoutine();
+		rclcpp::TimerBase::SharedPtr m_timer_publisher;
+		TargetWaypoint * m_target_waypoint;
 		/**
 		 * @brief These three properties are meant to be set through ros2 params and may only be set that way
 		*/
@@ -94,7 +118,16 @@ class SpacNode : public rclcpp::Node{
 		*/
 		void odometry_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
 	private: 
-		TargetWaypoint * m_target_waypoint;
+			rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr m_odometry_sub;
+		#ifdef __FSIPLEIRIA_2D_ONLY__
+			rclcpp::Subscription<geometry_msgs::msg::Pose2D>::SharedPtr m_waypoint_sub;
+		#else
+			rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr m_waypoint_sub;	
+		#endif 
+		//publisher for the ackermann drive
+		rclcpp::Publisher<ackermann_msgs::msg::AckermannDrive>::SharedPtr m_ackermann_publisher;
+		
+		
 };
 
 #endif

@@ -1,6 +1,6 @@
 <launch>
-	<node pkg="spac" exec="main" name="DriveModelNode">
-		<param from="./src/spac/demo_params.yaml"/>
+	<node pkg="spac" exec="spac_node" name="DriveModelNode">
+		<param from="/home/micron/ros2_ws/src/spac/config/demo_params.yaml" allow_substs="True" />
 	</node>
 
 </launch>
